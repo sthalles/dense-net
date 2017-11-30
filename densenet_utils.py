@@ -1,37 +1,13 @@
-# Copyright 2016 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""Contains building blocks for various versions of Residual Networks.
+"""Contains building blocks for various versions of DenseNets.
 
-Residual networks (ResNets) were proposed in:
-  Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
-  Deep Residual Learning for Image Recognition. arXiv:1512.03385, 2015
+Densely Connected Convolutional Networks (DenseNets) were originally proposed in:
+[1] Huang, Gao; Liu, Zhuang; Weinberger, Kilian Q.; van der Maaten, Laurens
+    Densely Connected Convolutional Networks. arXiv:1608.06993
 
-More variants were introduced in:
-  Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
-  Identity Mappings in Deep Residual Networks. arXiv: 1603.05027, 2016
-
-We can obtain different ResNet variants by changing the network depth, width,
-and form of residual unit. This module implements the infrastructure for
-building them. Concrete ResNet units and full ResNet networks are implemented in
-the accompanying resnet_v1.py and resnet_v2.py modules.
-
-Compared to https://github.com/KaimingHe/deep-residual-networks, in the current
-implementation we subsample the output activations in the last residual unit of
-each block, instead of subsampling the input activations in the first residual
-unit of each block. The two implementations give identical results but our
-implementation is more memory efficient.
+We can obtain different DenseNets variants by changing the network depth, width,
+and also the form of residual unit. This module implements the infrastructure for
+building them. Concrete DenseNet units and full DenseNet networks are implemented in
+the accompanying densenet.py module.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -44,12 +20,12 @@ slim = tf.contrib.slim
 
 
 class Block(collections.namedtuple('Block', ['scope', 'unit_fn', 'args'])):
-    """A named tuple describing a ResNet block.
+    """A named tuple describing a DenseNet block.
 
     Its parts are:
       scope: The scope of the `Block`.
-      unit_fn: The ResNet unit function which takes as input a `Tensor` and
-        returns another `Tensor` with the output of the ResNet unit.
+      unit_fn: The DenseNet unit function which takes as input a `Tensor` and
+        returns another `Tensor` with the output of the DenseNet unit.
       args: A list of length equal to the number of units in the `Block`. The list
         contains one (depth, depth_bottleneck, stride) tuple for each unit in the
         block to serve as argument to unit_fn.
@@ -58,6 +34,10 @@ class Block(collections.namedtuple('Block', ['scope', 'unit_fn', 'args'])):
 
 def transition_layer(inputs, factor, theta, scope=None):
     """Subsamples the input along the spatial dimensions.
+
+    The transition layers described in the paper consist of a batch normalization
+    layer and an 1×1 convolutional layer followed by a 2×2 average pooling layer 
+    between two contiguous dense blocks.
 
     Args:
     inputs: A `Tensor` of size [batch, height_in, width_in, channels].
@@ -84,19 +64,19 @@ def transition_layer(inputs, factor, theta, scope=None):
 @slim.add_arg_scope
 def stack_blocks_dense(net, blocks, output_stride=None,
                        outputs_collections=None):
-    """Stacks ResNet `Blocks` and controls output feature density.
+    """Stacks DenseNet `Blocks` and controls output feature density.
 
-    First, this function creates scopes for the ResNet in the form of
+    First, this function creates scopes for the DenseNet in the form of
     'block_name/unit_1', 'block_name/unit_2', etc.
 
-    Second, this function allows the user to explicitly control the ResNet
+    Second, this function allows the user to explicitly control the DenseNet
     output_stride, which is the ratio of the input to output spatial resolution.
     This is useful for dense prediction tasks such as semantic segmentation or
     object detection.
 
-    Most ResNets consist of 4 ResNet blocks and subsample the activations by a
-    factor of 2 when transitioning between consecutive ResNet blocks. This results
-    to a nominal ResNet output_stride equal to 8. If we set the output_stride to
+    Most DenseNets consist of 4 DenseNet blocks and subsample the activations by a
+    factor of 2 when transitioning between consecutive DenseNet blocks. This results
+    to a nominal DenseNet output_stride equal to 8. If we set the output_stride to
     half the nominal network stride (e.g., output_stride=4), then we compute
     responses twice.
 
@@ -104,16 +84,16 @@ def stack_blocks_dense(net, blocks, output_stride=None,
 
     Args:
       net: A `Tensor` of size [batch, height, width, channels].
-      blocks: A list of length equal to the number of ResNet `Blocks`. Each
-        element is a ResNet `Block` object describing the units in the `Block`.
+      blocks: A list of length equal to the number of DenseNet `Blocks`. Each
+        element is a DenseNet `Block` object describing the units in the `Block`.
       output_stride: If `None`, then the output will be computed at the nominal
         network stride. If output_stride is not `None`, it specifies the requested
         ratio of input to output spatial resolution, which needs to be equal to
-        the product of unit strides from the start up to some level of the ResNet.
-        For example, if the ResNet employs units with strides 1, 2, 1, 3, 4, 1,
+        the product of unit strides from the start up to some level of the DenseNet.
+        For example, if the DenseNet employs units with strides 1, 2, 1, 3, 4, 1,
         then valid values for the output_stride are 1, 2, 6, 24 or None (which
         is equivalent to output_stride=24).
-      outputs_collections: Collection to add the ResNet block outputs.
+      outputs_collections: Collection to add the DenseNet block outputs.
 
     Returns:
       net: Output tensor with stride equal to the specified output_stride.
@@ -161,12 +141,12 @@ def densenet_arg_scope(weight_decay=0.0001,
                        batch_norm_scale=True,
                        activation_fn=tf.nn.relu,
                        use_batch_norm=True):
-    """Defines the default ResNet arg scope.
+    """Defines the default DenseNet arg scope.
 
     TODO(gpapan): The batch-normalization related default values above are
-      appropriate for use in conjunction with the reference ResNet models
+      appropriate for use in conjunction with the reference DenseNet models
       released at https://github.com/KaimingHe/deep-residual-networks. When
-      training ResNets from scratch, they might need to be tuned.
+      training DenseNets from scratch, they might need to be tuned.
 
     Args:
       weight_decay: The weight decay to use for regularizing the model.
@@ -176,11 +156,11 @@ def densenet_arg_scope(weight_decay=0.0001,
         normalizing activations by their variance in batch normalization.
       batch_norm_scale: If True, uses an explicit `gamma` multiplier to scale the
         activations in the batch normalization layer.
-      activation_fn: The activation function which is used in ResNet.
+      activation_fn: The activation function which is used in DenseNet.
       use_batch_norm: Whether or not to use batch normalization.
 
     Returns:
-      An `arg_scope` to use for the resnet models.
+      An `arg_scope` to use for the DenseNet models.
     """
     batch_norm_params = {
         'decay': batch_norm_decay,
@@ -200,7 +180,7 @@ def densenet_arg_scope(weight_decay=0.0001,
         with slim.arg_scope([slim.batch_norm], **batch_norm_params):
             # The following implies padding='SAME' for pool1, which makes feature
             # alignment easier for dense prediction tasks. This is also used in
-            # https://github.com/facebook/fb.resnet.torch. However the accompanying
+            # https://github.com/facebook/fb.DenseNet.torch. However the accompanying
             # code of 'Deep Residual Learning for Image Recognition' uses
             # padding='VALID' for pool1. You can switch to that choice by setting
             # slim.arg_scope([slim.max_pool2d], padding='VALID').
