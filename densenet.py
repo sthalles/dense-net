@@ -88,7 +88,7 @@ def densenet(inputs,
              is_training=True,
              global_pool=True,
              output_stride=None,
-             include_root_max_poolling=True,
+             initial_output_stride=4,
              include_root_block=True,
              spatial_squeeze=True,
              reuse=None,
@@ -128,7 +128,7 @@ def densenet(inputs,
       output_stride: If None, then the output will be computed at the nominal
         network stride. If output_stride is not None, it specifies the requested
         ratio of input to output spatial resolution.
-      include_root_max_poolling: If true include the max pooling op after the convolution
+      initial_output_stride: If true include the max pooling op after the convolution
       include_root_block: If True, include the initial convolution followed by
         max-pooling, if False excludes it. If excluded, `inputs` should be the
         results of an activation-less convolution.
@@ -156,17 +156,20 @@ def densenet(inputs,
     Raises:
       ValueError: If the target output_stride is not valid.
     """
+
+    if initial_output_stride not in [2,4]:
+        raise ValueError("Initial output stride must be a value of 2 or 4")
+
     with tf.variable_scope(scope, 'densenet', [inputs], reuse=reuse) as sc:
+
         end_points_collection = sc.original_name_scope + '_end_points'
         with slim.arg_scope([slim.conv2d, bottleneck,
                              densenet_utils.stack_blocks_dense],
                             outputs_collections=end_points_collection):
             with slim.arg_scope([slim.batch_norm], is_training=is_training):
                 net = inputs
-                output_stride_factor = 4
+                output_stride_factor = initial_output_stride
                 if include_root_block:
-                    if not include_root_max_poolling:
-                        output_stride_factor = 2
 
                     if output_stride is not None:
                         if output_stride % output_stride_factor != 0:
@@ -179,7 +182,7 @@ def densenet(inputs,
                                         activation_fn=None, normalizer_fn=None):
                         net = slim.conv2d(net, 64, [7, 7], stride=2, scope='conv1')
 
-                    if include_root_max_poolling:
+                    if initial_output_stride == 4:
                         net = slim.max_pool2d(net, [3, 3], stride=2, scope='pool1')
 
                 net = densenet_utils.stack_blocks_dense(net, blocks, output_stride)
@@ -240,23 +243,24 @@ densenet.default_image_size = 224
 
 def densenet_121(inputs,
                  num_classes=None,
+                 theta=0.5,
                  is_training=True,
                  global_pool=True,
                  output_stride=None,
                  spatial_squeeze=True,
-                 include_root_max_poolling=True,
+                 initial_output_stride=4,
                  reuse=None,
                  scope='DenseNet_121'):
     """DenseNet-121 model of [1]. See densenet() for arg and return description."""
     blocks = [
-        densenet_block('block1', growth_rate=12, num_units=3, stride=2, theta=0.5),
-        densenet_block('block2', growth_rate=12, num_units=3, stride=2, theta=0.5),
-        densenet_block('block3', growth_rate=12, num_units=3, stride=2, theta=0.5),
-        densenet_block('block4', growth_rate=12, num_units=3, stride=1, theta=0.5),
+        densenet_block('block1', growth_rate=32, num_units=6, stride=2, theta=theta),
+        densenet_block('block2', growth_rate=32, num_units=12, stride=2, theta=theta),
+        densenet_block('block3', growth_rate=32, num_units=24, stride=2, theta=theta),
+        densenet_block('block4', growth_rate=32, num_units=16, stride=1, theta=theta),
     ]
     return densenet(inputs, blocks, num_classes, is_training=is_training,
                     global_pool=global_pool, output_stride=output_stride,
-                    include_root_block=True, include_root_max_poolling=include_root_max_poolling,
+                    include_root_block=True, initial_output_stride=initial_output_stride,
                     spatial_squeeze=spatial_squeeze, reuse=reuse, scope=scope)
 
 
@@ -265,6 +269,7 @@ densenet_121.default_image_size = densenet.default_image_size
 
 def densenet_169(inputs,
                  num_classes=None,
+                 theta=0.5,
                  is_training=True,
                  global_pool=True,
                  output_stride=None,
@@ -273,10 +278,10 @@ def densenet_169(inputs,
                  scope='DenseNet_169'):
     """DenseNet-101 model of [1]. See DenseNet() for arg and return description."""
     blocks = [
-        densenet_block('block1', growth_rate=64, num_units=6, stride=2, theta=1.0),
-        densenet_block('block2', growth_rate=128, num_units=12, stride=2, theta=1.0),
-        densenet_block('block3', growth_rate=256, num_units=32, stride=2, theta=1.0),
-        densenet_block('block4', growth_rate=512, num_units=32, stride=1, theta=1.0),
+        densenet_block('block1', growth_rate=64, num_units=6, stride=2, theta=theta),
+        densenet_block('block2', growth_rate=128, num_units=12, stride=2, theta=theta),
+        densenet_block('block3', growth_rate=256, num_units=32, stride=2, theta=theta),
+        densenet_block('block4', growth_rate=512, num_units=32, stride=1, theta=theta),
     ]
     return densenet(inputs, blocks, num_classes, is_training=is_training,
                     global_pool=global_pool, output_stride=output_stride,
@@ -289,6 +294,7 @@ densenet_169.default_image_size = densenet.default_image_size
 
 def densenet_201(inputs,
                  num_classes=None,
+                 theta=0.5,
                  is_training=True,
                  global_pool=True,
                  output_stride=None,
@@ -297,10 +303,10 @@ def densenet_201(inputs,
                  scope='DenseNet_201'):
     """DenseNet-152 model of [1]. See DenseNet() for arg and return description."""
     blocks = [
-        densenet_block('block1', growth_rate=64, num_units=6, stride=2, theta=1.0),
-        densenet_block('block2', growth_rate=128, num_units=12, stride=2, theta=1.0),
-        densenet_block('block3', growth_rate=256, num_units=48, stride=2, theta=1.0),
-        densenet_block('block4', growth_rate=512, num_units=32, stride=1, theta=1.0),
+        densenet_block('block1', growth_rate=64, num_units=6, stride=2, theta=theta),
+        densenet_block('block2', growth_rate=128, num_units=12, stride=2, theta=theta),
+        densenet_block('block3', growth_rate=256, num_units=48, stride=2, theta=theta),
+        densenet_block('block4', growth_rate=512, num_units=32, stride=1, theta=theta),
     ]
     return densenet(inputs, blocks, num_classes, is_training=is_training,
                     global_pool=global_pool, output_stride=output_stride,
@@ -313,6 +319,7 @@ densenet_201.default_image_size = densenet.default_image_size
 
 def densenet_161(inputs,
                  num_classes=None,
+                 theta=0.5,
                  is_training=True,
                  global_pool=True,
                  output_stride=None,
@@ -321,10 +328,10 @@ def densenet_161(inputs,
                  scope='DenseNet_161'):
     """DenseNet-200 model of [2]. See DenseNet() for arg and return description."""
     blocks = [
-        densenet_block('block1', growth_rate=48, num_units=6, stride=2, theta=1.0),
-        densenet_block('block2', growth_rate=48, num_units=12, stride=2, theta=1.0),
-        densenet_block('block3', growth_rate=48, num_units=36, stride=2, theta=1.0),
-        densenet_block('block4', growth_rate=48, num_units=24, stride=1, theta=1.0),
+        densenet_block('block1', growth_rate=48, num_units=6, stride=2, theta=theta),
+        densenet_block('block2', growth_rate=48, num_units=12, stride=2, theta=theta),
+        densenet_block('block3', growth_rate=48, num_units=36, stride=2, theta=theta),
+        densenet_block('block4', growth_rate=48, num_units=24, stride=1, theta=theta),
     ]
     return densenet(inputs, blocks, num_classes, is_training=is_training,
                     global_pool=global_pool, output_stride=output_stride,
