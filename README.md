@@ -10,7 +10,7 @@ The DenseNet library described here implements all 4 architectures used to train
 
 That follows a basic usage for classification task with 1000 classes.
 
-{% highlight python %}
+```python
 import tensorflow as tf
 import numpy as np
 import densenet
@@ -26,13 +26,13 @@ with slim.arg_scope(densenet_arg_scope()):
                                             is_training=True,
                                             scope='DenseNet_121')
     print(net.shape)# (1, 1000)
-{% endhighlight %}
+```
 
 ### Dense Prediction tasks
 
 Basic usage for dense prediction problems. output_stride is set to 16 and initial_output_stride controls how much signal decimation is going to be performed in the beginning of the network.
 
-{% highlight python %}
+```python
 with slim.arg_scope(densenet_arg_scope()):
 
     net, end_points = densenet.densenet_121(fake_input,
@@ -47,11 +47,11 @@ with slim.arg_scope(densenet_arg_scope()):
       sess.run(tf.global_variables_initializer())
       logits = sess.run(net)
       print(logits.shape) # (1, 14, 14, 21)
-{% endhighlight %}
+```
 
 For general using and experimenting with different configurations of DenseNet, use the ***densenet_X(...)** constructor.
 
-{% highlight python %}
+```python
 # Custom definition for DenseNet_121
 def densenet_X(inputs,
                 num_classes=None,
@@ -65,4 +65,4 @@ def densenet_X(inputs,
                 initial_output_stride=4,
                 reuse=None,
                 scope='DenseNet_X'):
-{% endhighlight %}
+```
