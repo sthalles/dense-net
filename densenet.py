@@ -274,6 +274,7 @@ def densenet_169(inputs,
                  global_pool=True,
                  output_stride=None,
                  spatial_squeeze=True,
+                 initial_output_stride=4,
                  reuse=None,
                  scope='DenseNet_169'):
     """DenseNet-101 model of [1]. See DenseNet() for arg and return description."""
@@ -286,7 +287,7 @@ def densenet_169(inputs,
     return densenet(inputs, blocks, num_classes, is_training=is_training,
                     global_pool=global_pool, output_stride=output_stride,
                     include_root_block=True, spatial_squeeze=spatial_squeeze,
-                    reuse=reuse, scope=scope)
+                    reuse=reuse, scope=scope, initial_output_stride=initial_output_stride)
 
 
 densenet_169.default_image_size = densenet.default_image_size
@@ -299,6 +300,7 @@ def densenet_201(inputs,
                  global_pool=True,
                  output_stride=None,
                  spatial_squeeze=True,
+                 initial_output_stride=4,
                  reuse=None,
                  scope='DenseNet_201'):
     """DenseNet-152 model of [1]. See DenseNet() for arg and return description."""
@@ -311,7 +313,7 @@ def densenet_201(inputs,
     return densenet(inputs, blocks, num_classes, is_training=is_training,
                     global_pool=global_pool, output_stride=output_stride,
                     include_root_block=True, spatial_squeeze=spatial_squeeze,
-                    reuse=reuse, scope=scope)
+                    reuse=reuse, scope=scope, initial_output_stride=initial_output_stride)
 
 
 densenet_201.default_image_size = densenet.default_image_size
@@ -324,6 +326,7 @@ def densenet_161(inputs,
                  global_pool=True,
                  output_stride=None,
                  spatial_squeeze=True,
+                 initial_output_stride=4,
                  reuse=None,
                  scope='DenseNet_161'):
     """DenseNet-200 model of [2]. See DenseNet() for arg and return description."""
@@ -336,7 +339,37 @@ def densenet_161(inputs,
     return densenet(inputs, blocks, num_classes, is_training=is_training,
                     global_pool=global_pool, output_stride=output_stride,
                     include_root_block=True, spatial_squeeze=spatial_squeeze,
-                    reuse=reuse, scope=scope)
+                    reuse=reuse, scope=scope, initial_output_stride=initial_output_stride)
 
+def densenet_X(inputs,
+                num_classes=None,
+                theta=0.5,
+                num_blocks=4,
+                num_units_per_block=[6,12,24,16],
+                growth_rate=32,
+                is_training=True,
+                global_pool=True,
+                output_stride=None,
+                spatial_squeeze=True,
+                initial_output_stride=4,
+                reuse=None,
+                scope='DenseNet_X'):
 
-densenet_161.default_image_size = densenet.default_image_size
+    if num_blocks != len(num_units_per_block):
+        raise ValueError("The number of units per block must match the number of blocks.")
+
+    blocks = []
+
+    for i in range(num_blocks-1):
+        blocks.append(densenet_block('block%d'%i, growth_rate=growth_rate, num_units=num_units_per_block[i], stride=2, theta=theta))
+
+    # append the last dense block with stride=1
+    blocks.append(
+        densenet_block('block%d' % (num_blocks-1), growth_rate=growth_rate, num_units=num_units_per_block[-1], stride=1, theta=theta))
+
+    return densenet(inputs, blocks, num_classes, is_training=is_training,
+                    global_pool=global_pool, output_stride=output_stride,
+                    include_root_block=True, spatial_squeeze=spatial_squeeze,
+                    reuse=reuse, scope=scope, initial_output_stride=initial_output_stride)
+
+    densenet_161.default_image_size = densenet.default_image_size

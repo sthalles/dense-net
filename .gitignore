@@ -1,1 +1,7 @@
-tboard_logs/**
+/tboard_logs/**
+
+*.xml
+
+tboard_logs/train/events.out.tfevents.1511778308.thalles
+
+*.thalles
