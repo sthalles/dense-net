@@ -27,7 +27,7 @@ class Block(collections.namedtuple('Block', ['scope', 'unit_fn', 'args'])):
       unit_fn: The DenseNet unit function which takes as input a `Tensor` and
         returns another `Tensor` with the output of the DenseNet unit.
       args: A list of length equal to the number of units in the `Block`. The list
-        contains one (depth, depth_bottleneck, stride) tuple for each unit in the
+        contains one (growth_rate, depth_bottleneck, stride, theta) tuple for each unit in the
         block to serve as argument to unit_fn.
     """
 

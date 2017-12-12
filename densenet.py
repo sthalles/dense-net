@@ -344,7 +344,6 @@ def densenet_161(inputs,
 def densenet_X(inputs,
                 num_classes=None,
                 theta=0.5,
-                num_blocks=4,
                 num_units_per_block=[6,12,24,16],
                 growth_rate=32,
                 is_training=True,
@@ -354,10 +353,7 @@ def densenet_X(inputs,
                 initial_output_stride=4,
                 reuse=None,
                 scope='DenseNet_X'):
-
-    if num_blocks != len(num_units_per_block):
-        raise ValueError("The number of units per block must match the number of blocks.")
-
+    num_blocks = len(num_units_per_block)
     blocks = []
 
     for i in range(num_blocks-1):
