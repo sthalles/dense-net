@@ -1,6 +1,6 @@
 # Densely Connected Convolutional Networks in Tensorflow
 
-Blog post:
+Blog post: https://github.com/sthalles/dense-net
 
 ## Usage
 
