@@ -1,6 +1,8 @@
 # Densely Connected Convolutional Networks in Tensorflow
 
-Blog post: https://github.com/sthalles/dense-net
+Original paper: https://arxiv.org/abs/1608.06993.
+
+For an overview of this implementation and complete documentation, refer to: https://github.com/sthalles/dense-net.
 
 ## Usage
 
